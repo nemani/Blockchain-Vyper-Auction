@@ -1,4 +1,4 @@
-# Solidity-Auction
+# Blockchain Combinitorial Auction with Vyper
 ### Authors:
 #### Arjun Nemani    20161027 
 #### B.Vishal Reddy  201501173
@@ -6,5 +6,5 @@
 #### P.Deeraj Reddy  201501093
 
 
- This repository contains code for a Single-minded Combinatorial Auction Contract written in Solidity, as part of "Distributing Trust and Blockchain" Course at IIIT Hyderabad, in Monsoon 2018 
+ This repository contains code for a Single-minded Combinatorial Auction Contract written in Vyper, as part of "Distributing Trust and Blockchain" Course at IIIT Hyderabad, in Monsoon 2018 
 
