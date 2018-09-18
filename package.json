@@ -1,8 +1,7 @@
 {
   "name": "Blockchain-Vyper-Auction",
   "version": "0.0.1",
-  "description":
-    "Vyper implementation of the Single Minded Combinitorial Auction .",
+  "description": "Vyper implementation of the Single Minded Combinitorial Auction .",
   "directories": {
     "test": "test"
   },
@@ -20,7 +19,9 @@
     "type": "git",
     "url": ""
   },
-  "keywords": [""],
+  "keywords": [
+    ""
+  ],
   "author": "nemaniarjun",
   "license": "MIT",
   "bugs": {
