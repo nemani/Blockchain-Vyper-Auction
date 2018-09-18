@@ -34,6 +34,6 @@
   "devDependencies": {
     "eslint": "4.19.1",
     "truffle": "4.1.11",
-    "truper": "0.0.2"
+    "truper": "github:nemaniarjun/truper#master"
   }
 }
