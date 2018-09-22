@@ -106,12 +106,31 @@ def sqrt(_val:decimal) -> decimal :
     return y
 
 @public
-def compare(_a : uint256[2], _b : uint256[2], _n1 : uint256, _n2 :uint256) -> bool:
-    val1 : decimal = (convert(_a[0], 'decimal') - convert(_b[0],'decimal')) / self.sqrt(convert(_n1, 'decimal'))
-    val2 : decimal = (convert(_a[1], 'decimal') - convert(_b[1],'decimal')) / self.sqrt(convert(_n2, 'decimal'))
-    if val1 + val2 < (convert(self.q, 'decimal')) / 2.0:
+def compareIndex(j : int128, k : int128) -> bool:
+    Au : decimal = convert( self.notaries[self.bidder_map[j]].bid_value[0], 'decimal' )
+    Av : decimal = convert( self.notaries[self.bidder_map[j]].bid_value[1], 'decimal' )
+    Bu : decimal = convert( self.notaries[self.bidder_map[k]].bid_value[0], 'decimal' )
+    Bv : decimal = convert( self.notaries[self.bidder_map[k]].bid_value[1], 'decimal' )
+
+    N1 : decimal = convert( self.bidders[self.bidder_map[j]].num_items, 'decimal')
+    N2 : decimal = convert( self.bidders[self.bidder_map[k]].num_items, 'decimal')
+
+    Q : decimal = convert( self.q, 'decimal')
+
+    val1 : decimal = (Au - Bu) / self.sqrt(N1)
+    val2 : decimal = (Av - Bv) / self.sqrt(N1)
+    
+    if val1 + val2 < Q / 2.0:
         return True
+
     return False
+
+@public
+def swapBidders(j : int128, k : int128) -> bool:
+    temp : uint256[2]  = self.notaries[self.bidder_map[j]].bid_value
+    self.notaries[self.bidder_map[j]].bid_value = self.notaries[self.bidder_map[j + 1]].bid_value
+    self.notaries[self.bidder_map[j + 1]].bid_value = temp
+    return True
 
 @public
 def winnerDetermine():
@@ -123,7 +142,5 @@ def winnerDetermine():
             if j >= self.bidders_size - i - 1:
                 break
 
-            if (self.compare(self.notaries[self.bidder_map[j]].bid_value, self.notaries[self.bidder_map[j+1]].bid_value, self.bidders[self.bidder_map[j]].num_items, self.bidders[self.bidder_map[j+1]].num_items)):
-                temp : uint256[2]  = self.notaries[self.bidder_map[j]].bid_value
-                self.notaries[self.bidder_map[j]].bid_value = self.notaries[self.bidder_map[j + 1]].bid_value
-                self.notaries[self.bidder_map[j + 1]].bid_value = temp
+            if self.compareIndex(j, j+1):
+                self.swapBidders(j, j + 1)
