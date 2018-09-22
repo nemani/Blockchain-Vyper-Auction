@@ -1,5 +1,5 @@
-var NameRegistry = artifacts.require("name_registry");
+var Auction = artifacts.require("auction");
 
 module.exports = function(deployer) {
-	deployer.deploy(NameRegistry,19,10,1000);
+	deployer.deploy(Auction,19,10,1000);
 };
