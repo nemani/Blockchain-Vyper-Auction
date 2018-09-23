@@ -29,6 +29,7 @@
   },
   "homepage": "",
   "dependencies": {
+    "chai": "^4.1.2",
     "ethjs-util": "^0.1.6"
   },
   "devDependencies": {

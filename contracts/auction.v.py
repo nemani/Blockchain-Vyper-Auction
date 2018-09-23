@@ -28,7 +28,6 @@ bidder_map : address[int128]
 
 notaries : public({
         bidder:address,
-        isAssigned : bool,
         bid_input : uint256[100][2],
         bid_value : uint256[2],
         isValid : bool
@@ -63,7 +62,7 @@ def __default__():
 #First notaries register and their public address stored in map
 @public
 def notaryRegister():
-    assert not self.notaries[msg.sender].isValid
+    assert not self.notaries[msg.sender].isValid and not msg.sender == self.auctioner
 
     self.notary_map[self.notaries_size] = msg.sender
     self.notaries[msg.sender].isValid = True
@@ -75,15 +74,14 @@ def notaryRegister():
 @payable
 def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items:uint256):
     assert self.notary_num < self.notaries_size
+    assert not self.auctioner == msg.sender
     assert not self.bidders[msg.sender].isValid and not self.notaries[msg.sender].isValid
-    assert not self.notaries[self.notary_map[self.notary_num]].isAssigned
     assert _num_items > 0 and _num_items <= self.M
 
     self.bidder_map[self.bidders_size] = msg.sender
     self.bidders_size = self.bidders_size + 1
 
     #Assign notary
-    self.notaries[self.notary_map[self.notary_num]].isAssigned = True
     self.notaries[self.notary_map[self.notary_num]].bidder = msg.sender
     self.bidders[msg.sender].notary = self.notary_map[self.notary_num]
     self.bidders[msg.sender].isValid = True
