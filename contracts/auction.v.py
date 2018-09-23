@@ -24,13 +24,14 @@ bidders: public({
         notaryIndex: int128,
         num_items : uint256,
         isValid : bool,
-        Payment : decimal
+        Payment : wei_value,
+        Payed : wei_value
     }[int128])
 
 
 notaries : public({
-        notary : address,
-        bidder:address,
+        notary: address,
+        bidder: address,
         bidderIndex: int128,
         bid_input : uint256[100][2],
         bid_value : uint256[2],
@@ -54,6 +55,19 @@ def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
     
     self.auction_start = block.timestamp
     self.auction_end = self.auction_start + _bidding_time
+
+@private
+def sqrt(x: uint256, xx: uint256) -> decimal :
+    _val : decimal = convert(xx, 'decimal')
+    z : decimal  = (_val + 1.0) / 2.0
+    y : decimal  = _val
+    for i in range(100):
+        if z < y:
+            break
+        y = z
+        z = (_val / z + z) / 2.0
+    
+    return y * convert(x, 'decimal')
 
 #First notaries register and their public address stored in map
 @public
@@ -90,6 +104,13 @@ def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items
     self.notaries[self.notary_num].bid_value = _bid_value
     self.notary_num = self.notary_num + 1
     
+    U : uint256 = _bid_value[0]
+    V : uint256 = _bid_value[1]
+    wi : uint256 = (U + V) % self.q
+
+    assert msg.value > as_wei_value(self.sqrt(wi, _num_items), 'wei')
+    self.bidders[self.notary_num].Payed = msg.value
+
     log.BidderRegister(msg.sender)  
 
 
@@ -115,19 +136,6 @@ def swapBidders(j : int128, k : int128) -> bool:
     self.notaries[j + 1].bid_value = temp
     return True
 
-
-@private
-def sqrt(x: uint256, xx: uint256) -> decimal :
-    _val : decimal = convert(xx, 'decimal')
-    z : decimal  = (_val + 1.0) / 2.0
-    y : decimal  = _val
-    for i in range(100):
-        if z < y:
-            break
-        y = z
-        z = (_val / z + z) / 2.0
-    
-    return y * convert(x, 'decimal')
 
 @public    
 def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
@@ -231,6 +239,9 @@ def winnerDetermine():
             U : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[0]
             V : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[1]
             wj : uint256 = (U + V) % self.q
-            self.bidders[xi].Payment = self.sqrt(wj, self.bidders[xi].num_items)
+            self.bidders[xi].Payment = as_wei_value(self.sqrt(wj, self.bidders[xi].num_items), 'wei')
         else:
-            self.bidders[xi].Payment = 0    
+            self.bidders[xi].Payment = 0
+
+
+        # for each bidder send Payed - Payment
