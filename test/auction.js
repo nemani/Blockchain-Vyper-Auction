@@ -1,136 +1,243 @@
-var Auction = artifacts.require('auction');
-contract('auction', accounts => {
+var Auction = artifacts.require("auction");
+
+// Helps is asserting events
+const truffleAssert = require("truffle-assertions");
+
+contract("auction", accounts => {
 	const owner = accounts[0];
-	describe('constructor', () => {
-		describe('success case', () => {
-			it('should deploy this contract', async () => {
-				try {
-				const instance = await Auction.new(19,10,1000, { from: owner });
-				} catch (err) {
-				assert.isUndefined(err.message,'revert with valid arguments');
-				}
+	describe("constructor", () => {
+		describe("Assert Contract is deployed", () => {
+			it("should deploy this contract", async () => {
+				const instance = await Auction.new(19, 10, { from: owner });
+
+				let q = await instance.q.call();
+				let M = await instance.M.call();
+
+				assert.isNotNull(instance);
+				assert.equal(q.toNumber(), 19);
+				assert.equal(M.toNumber(), 10);
+
+				// Taken from https://github.com/rkalis/truffle-assertions
+				let result = await truffleAssert.createTransactionResult(
+					instance,
+					instance.transactionHash
+				);
+
+				truffleAssert.eventEmitted(result, "AuctionStarted");
 			});
 		});
-		describe('Fail case', () => {
-			it('should revert on invalid arguments', async () => {
+		describe("Fail case", () => {
+			it("should revert on invalid from address", async () => {
 				try {
-				const instance = await Auction.new(19,10,1000, { from: accounts[1] });
-				assert.isUndefined(instance, 'contract should be created from owner');
+					const instance = await Auction.new(19, 10, {
+						from: "lol"
+					});
+					assert.fail(
+						"should have thrown an error in the above line"
+					);
 				} catch (err) {
-				assert.isUndefined(err.message,'revert with valid arguments');
-				}
-			});
-		});
-	});
-	describe('Notary Register', () => {
-		let instance;	
-		beforeEach(async () => {
-			instance = await Auction.new(19,10,1000, { from: owner });
-		});
-		describe('Fail case', () => {
-			it('notary should register with valid address', async () => {
-				try {
-				await instance.notaryRegister({ from: accounts[0] });
-				} catch (err) {
-				assert.isUndefined(err.message,'revert from valid address');
-				}
-			});
-		});
-		describe('success case', () => {
-			it('successfully register with this address', async () => {
-				try {
-				await instance.notaryRegister({ from: accounts[1] });
-				await instance.notaryRegister({ from: accounts[2] });
-				await instance.notaryRegister({ from: accounts[3] });
-				await instance.notaryRegister({ from: accounts[4] });
-				} catch (err) {
-				assert.isUndefined(err.message,'revert from valid address');
-				}
-			});
-		});
-		describe('success case', () => {
-			it('should return notary num', async () => {
-				try {
-				await instance.notaryRegister({ from: accounts[1] });
-				await instance.notaryRegister({ from: accounts[2] });
-				await instance.notaryRegister({ from: accounts[3] });
-				await instance.notaryRegister({ from: accounts[4] });
-				assert.equal(await instance.notaries_size.call(),4,'num of notaries should be 4');
-				} catch (err) {
-				assert.isUndefined(err.message,'wrong number of notaries');
+					assert.equal(err.message, "invalid address");
 				}
 			});
 		});
 	});
-	describe('Bidder Register', () => {
-		let instance;	
+	describe("Notary Register", () => {
+		let instance;
+
 		beforeEach(async () => {
-			instance = await Auction.new(19,10,1000, { from: owner });
+			instance = await Auction.new(19, 10, { from: owner });
+		});
+
+		describe("Success Case", () => {
+			it("1 Notary can successfully register and event is emitted", async () => {
+				let result = await instance.notaryRegister({
+					from: accounts[1]
+				});
+				truffleAssert.eventEmitted(result, "NotaryRegister");
+				assert.equal(
+					await instance.notaries_size.call(),
+					1,
+					"num of notaries should be 1"
+				);
+			});
+		});
+
+		describe("Success Case", () => {
+			it("4 notaries can register, and we can check with notaries_size", async () => {
+				await instance.notaryRegister({ from: accounts[1] });
+				await instance.notaryRegister({ from: accounts[2] });
+				await instance.notaryRegister({ from: accounts[3] });
+				await instance.notaryRegister({ from: accounts[4] });
+				assert.equal(
+					await instance.notaries_size.call(),
+					4,
+					"There should be 4 Registered Notaries"
+				);
+			});
+		});
+
+		describe("Fail Case", () => {
+			it("notary cannot register with owner address", async () => {
+				try {
+					await instance.notaryRegister({ from: accounts[0] });
+				} catch (err) {
+					assert.equal(
+						err.message,
+						"VM Exception while processing transaction: revert"
+					);
+				}
+			});
+		});
+
+		describe("Fail Case", () => {
+			it("Notary cannot register twice", async () => {
+				await instance.notaryRegister({ from: accounts[1] });
+				try {
+					await instance.notaryRegister({ from: accounts[1] });
+				} catch (err) {
+					assert.equal(
+						err.message,
+						"VM Exception while processing transaction: revert"
+					);
+				}
+			});
+		});
+	});
+	describe("Bidder Register", () => {
+		let instance;
+
+		beforeEach(async () => {
+			instance = await Auction.new(19, 10, { from: owner });
 			await instance.notaryRegister({ from: accounts[1] });
 			await instance.notaryRegister({ from: accounts[2] });
 			await instance.notaryRegister({ from: accounts[3] });
 			await instance.notaryRegister({ from: accounts[4] });
 		});
-		describe('Fail case', () => {
-			it('bidder should register with valid address', async () => {
+
+		describe("Success Case", () => {
+			it("Bidder can register with new address", async () => {
+				let result = await instance.bidderRegister(
+					[[12, 8], [12, 9]],
+					[5, 6],
+					2,
+					{
+						from: accounts[5],
+						value: web3.toWei(16, "wei")
+					}
+				);
+				truffleAssert.eventEmitted(result, "BidderRegister");
+				assert.equal(
+					await instance.bidders_size.call(),
+					1,
+					"num of bidders should be 1"
+				);
+			});
+		});
+
+		describe("Fail case", () => {
+			it("bidder should deposit min value of w*sqrt(num_items) wei", async () => {
 				try {
-				await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[2] });
+					await instance.bidderRegister(
+						[[12, 8], [12, 9]],
+						[5, 6],
+						2,
+						{
+							from: accounts[5],
+							value: web3.toWei(1, "wei")
+						}
+					);
+					assert.fail(
+						"should have thrown an error in the above line"
+					);
 				} catch (err) {
-				assert.isUndefined(err.message,'revert from valid address');
+					assert.equal(
+						err.message,
+						"VM Exception while processing transaction: revert"
+					);
 				}
 			});
 		});
-		describe('Fail case', () => {
-			it('bidder should deposit min value of w*sqrt(num_items) wei', async () => {
+
+		describe("Fail case", () => {
+			it("bidder should not be Registered as notary", async () => {
 				try {
-			 	await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'wei')});
+					await instance.bidderRegister(
+						[[12, 8], [12, 9]],
+						[5, 6],
+						2,
+						{
+							from: accounts[1],
+							value: web3.toWei(16, "wei")
+						}
+					);
+					assert.fail(
+						"should have thrown an error in the above line"
+					);
 				} catch (err) {
-				assert.isUndefined(err.message,'revert with valid deposit value');
+					assert.equal(
+						err.message,
+						"VM Exception while processing transaction: revert"
+					);
 				}
 			});
 		});
-		describe('success case', () => {
-			it('bidder successfully registers with this address', async () => {
-				try {
-			 	await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'ether')});
-				await instance.bidderRegister([[7,1],[12,9],[11,11]],[4,6],3,{ from: accounts[6],value:web3.toWei(1,'ether')});
-				await instance.bidderRegister([[13,10],[12,8]],[3,4],2,{ from: accounts[7],value:web3.toWei(1,'ether')});
-				} catch (err) {
-				assert.isUndefined(err.message,'revert from valid address');
-				}
+		describe("success case", () => {
+			it("multiple bidders can successfully register", async () => {
+				await instance.bidderRegister([[12, 8], [12, 9]], [5, 6], 2, {
+					from: accounts[5],
+					value: web3.toWei(16, "wei")
+				});
+				await instance.bidderRegister(
+					[[7, 1], [12, 9], [11, 11]],
+					[4, 6],
+					3,
+					{ from: accounts[6], value: web3.toWei(18, "wei") }
+				);
+				await instance.bidderRegister([[13, 10], [12, 8]], [3, 4], 2, {
+					from: accounts[7],
+					value: web3.toWei(16, "wei")
+				});
+				assert.equal(
+					await instance.bidders_size.call(),
+					3,
+					"num of bidders should be 3"
+				);
 			});
 		});
 	});
-	describe('Winner Determination', () => {
-		let instance;	
+	describe("Winner Determination", () => {
+		let instance;
 		beforeEach(async () => {
-			instance = await Auction.new(19,10,1000, { from: owner });
+			instance = await Auction.new(19, 10, { from: owner });
 			await instance.notaryRegister({ from: accounts[1] });
 			await instance.notaryRegister({ from: accounts[2] });
 			await instance.notaryRegister({ from: accounts[3] });
 			await instance.notaryRegister({ from: accounts[4] });
-			await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'ether')});
-			await instance.bidderRegister([[7,1],[12,9],[11,11]],[4,6],3,{ from: accounts[6],value:web3.toWei(1,'ether')});
-			await instance.bidderRegister([[13,10],[12,8]],[3,4],2,{ from: accounts[7],value:web3.toWei(1,'ether')});
 
-		});
-		describe('success case', () => {
-			it('check sorted list', async () => {
-				try {
-			 	await instance.winnerDetermine({ from: owner});
-				//var sorted = [[5,6],[4,6],[3,4]];
-				//var sorted2 = [] ;
-				//var val = await instance.notaries__bid_value.call(0,0);
-				//console.log(val.toNumber());
-				//assert.deepEqual(sorted2,sorted,'not sorted');
-				} catch (err) {
-				assert.isUndefined(err.message,'revert from valid address');
-				}
+			await instance.bidderRegister([[12, 8], [12, 9]], [5, 6], 2, {
+				from: accounts[5],
+				value: web3.toWei(16, "wei")
+			});
+
+			await instance.bidderRegister(
+				[[7, 1], [12, 9], [11, 11]],
+				[4, 6],
+				3,
+				{ from: accounts[6], value: web3.toWei(20, "wei") }
+			);
+
+			await instance.bidderRegister([[13, 10], [12, 8]], [3, 4], 2, {
+				from: accounts[7],
+				value: web3.toWei(15, "wei")
 			});
 		});
-
-
+		describe("success case", () => {
+			it("check sorted list", async () => {
+				result = await instance.winnerDetermine({ from: owner });
+				console.log(result);
+				// var val = await instance.notaries__bid_value.call(0, 0);
+				// console.log(val.toNumber());
+			});
+		});
 	});
-
 });
-

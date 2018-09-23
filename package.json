@@ -30,7 +30,8 @@
   "homepage": "",
   "dependencies": {
     "chai": "^4.1.2",
-    "ethjs-util": "^0.1.6"
+    "ethjs-util": "^0.1.6",
+    "truffle-assertions": "^0.4.0"
   },
   "devDependencies": {
     "eslint": "4.19.1",
