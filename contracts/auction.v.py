@@ -21,14 +21,17 @@ notary_num: public(int128)
 bidders: public({
         bidder: address,
         notary: address,
+        notaryIndex: int128,
         num_items : uint256,
-        isValid : bool
+        isValid : bool,
+        Payment : decimal
     }[int128])
 
 
 notaries : public({
         notary : address,
         bidder:address,
+        bidderIndex: int128,
         bid_input : uint256[100][2],
         bid_value : uint256[2],
         isValid : bool
@@ -77,10 +80,12 @@ def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items
     #Assign notary
     self.notaries[self.notary_num].bidder = msg.sender
     self.bidders[self.notary_num].notary = self.notaries[self.notary_num].notary
+    self.bidders[self.notary_num].notaryIndex = self.notary_num
     self.bidders[self.notary_num].isValid = True
 
     #send items and value to notary
     self.bidders[self.notary_num].num_items = _num_items
+    self.notaries[self.notary_num].bidderIndex = self.notary_num
     self.notaries[self.notary_num].bid_input = _bid_input
     self.notaries[self.notary_num].bid_value = _bid_value
     self.notary_num = self.notary_num + 1
@@ -110,8 +115,22 @@ def swapBidders(j : int128, k : int128) -> bool:
     self.notaries[j + 1].bid_value = temp
     return True
 
+
+@private
+def sqrt(x: uint256, xx: uint256) -> decimal :
+    _val : decimal = convert(xx, 'decimal')
+    z : decimal  = (_val + 1.0) / 2.0
+    y : decimal  = _val
+    for i in range(100):
+        if z < y:
+            break
+        y = z
+        z = (_val / z + z) / 2.0
+    
+    return y * convert(x, 'decimal')
+
 @public    
-def checkNotEqual(j : int128, i : int128,k : int128, l : int128) ->bool:
+def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
     Au : uint256 = self.notaries[j].bid_input[k][0]
     Av : uint256 = self.notaries[j].bid_input[k][1]
     Bu : uint256 = self.notaries[i].bid_input[l][0]
@@ -121,8 +140,8 @@ def checkNotEqual(j : int128, i : int128,k : int128, l : int128) ->bool:
     val2 : uint256 = (Av - Bv)
     
     if val1 + val2 == 0:
-        return False
-    return True
+        return True
+    return False
 
 @public
 def winnerDetermine():
@@ -139,27 +158,79 @@ def winnerDetermine():
                 self.swapBidders(j, j + 1)
     
     #step 2
-    index : int128 = 0
+    self.winners[0] = 0
+    winner_num : int128 = 1
+    
     for i in range(100):
-        if i == 0:
-            self.winners[index] = i
-            index = index + 1
-            continue
+        flag : bool = False
+        
+        if i >= self.bidders_size:
+            break
 
         for j in range(100):
-            if j >= i:
+
+            if flag or j >= winner_num:
                 break
 
             for k in range(100):
-                if k >= convert(self.bidders[j].num_items,'int128'):
+                if flag or k >= convert(self.bidders[self.winners[j]].num_items,'int128'):
                     break
 
                 for l in range(100):
                     if l >= convert(self.bidders[i].num_items,'int128'):
                         break
 
-                    if(self.checkNotEqual(j,i,k,l)):
-                        self.winners[index] = i
-                        index = index + 1
+                    #  Compare bidder[winners[j]][k] and bidders[i][l]
+                    if (self.checkEqual(self.winners[j], i, k, l)):
+                        flag = True
+                        break
+        
+        if flag:
+            self.winners[winner_num] = i
+            winner_num = winner_num + 1
 
 
+    for i in range(100):
+        didwefindaj : bool = False
+        ourJ : int128 = 0
+        if i >= winner_num:
+            break
+
+        for j in range(self.winners[i], self.winners[i] + 100):
+            isthisthej : bool = True
+            if j >= self.bidders_size:
+                break
+
+            for k in range(0, 100):
+                if not isthisthej or k >= j:
+                    break
+
+                if k == i:
+                    continue
+
+                for a in range(100):
+                    if not isthisthej or a >= convert(self.bidders[j].num_items,'int128'):
+                        break
+
+                    for b in range(100):
+                        if b >= convert(self.bidders[k].num_items,'int128'):
+                            break
+
+                        #  Compare bidder[winners[j]][k] and bidders[i][l]
+                        if (self.checkEqual(j, k, a, b)):
+                            isthisthej = False
+                            break
+            
+            if isthisthej:
+                didwefindaj = True
+                ourJ = j
+                break
+
+        xi : int128 = self.winners[i]
+        if didwefindaj:
+            U : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[0]
+            V : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[1]
+            wj : uint256 = (U + V) % self.q
+            self.bidders[xi].Payment = self.sqrt(wj, self.bidders[xi].num_items)
+        else:
+            self.bidders[xi].Payment = 0    
