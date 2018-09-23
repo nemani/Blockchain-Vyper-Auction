@@ -261,7 +261,7 @@ def winnerDetermine():
         if i > self.notaries_size:
             break
         send_addr : address = self.notaries[i].notary
-        val : wei_value = constantPay * self.notaries[i].timesused
+        val : wei_value = self.constantPay * self.notaries[i].timesused
         send(send_addr, val)
 
 
