@@ -121,7 +121,7 @@ def swapBidders(j : int128, k : int128) -> bool:
     return True
 
 @public    
-def compare(j : int128, i : int128,k : int128, l : int128) ->bool:
+def checkNotEqual(j : int128, i : int128,k : int128, l : int128) ->bool:
     Au : decimal = convert( self.notaries[self.bidder_map[j]].bid_input[k][0], 'decimal' )
     Av : decimal = convert( self.notaries[self.bidder_map[j]].bid_input[k][1], 'decimal' )
     Bu : decimal = convert( self.notaries[self.bidder_map[i]].bid_input[l][0], 'decimal' )
@@ -130,7 +130,7 @@ def compare(j : int128, i : int128,k : int128, l : int128) ->bool:
     val1 : decimal = (Au - Bu)
     val2 : decimal = (Av - Bv)
     
-    if val1 + val2 ==0.0:
+    if val1 + val2 == 0.0:
         return False
     return True
 
@@ -145,26 +145,31 @@ def winnerDetermine():
             if j >= self.bidders_size - i - 1:
                 break
 
-            if self.compareIndex(j, j+1):
+            if self.compareIndex(j, j + 1):
                 self.swapBidders(j, j + 1)
+    
     #step 2
     index : int128 = 0
 
     for i in range(100):
-        if i==0:
+        if i == 0:
             self.winners[index] = i
             index = index + 1
             continue
+
         for j in range(100):
             if j >= i:
                 break
+
             for k in range(100):
                 if k >= convert(self.bidders[self.bidder_map[j]].num_items,'int128'):
                     break
+
                 for l in range(100):
                     if l >= convert(self.bidders[self.bidder_map[i]].num_items,'int128'):
                         break
-                    if(self.compare(j,i,k,l)):
+
+                    if(self.checkNotEqual(j,i,k,l)):
                         self.winners[index] = i
                         index = index + 1
 
