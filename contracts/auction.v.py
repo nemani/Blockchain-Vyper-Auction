@@ -248,21 +248,21 @@ def winnerDetermine():
             self.bidders[xi].Payment = 0
 
 
-        # for each bidder send Payed - Payment
-        for i in range(100):
-            if i > self.bidders_size:
-                break
-            send_addr = self.bidders[i].bidder
-            diff = self.bidders[i].Payed - self.biddera[i].Payment
-            send(send_addr, diff)
-        
-        # For each notary send constantPay * notatary.timesUsed 
-        for i in range(100):
-            if i > self.notaries_size:
-                break
-            send_addr = self.notaries[i].notary
-            val = constantPay * self.notaries[i].timesused
-            send(send_addr, val)
+    # for each bidder send Payed - Payment
+    for i in range(100):
+        if i > self.bidders_size:
+            break
+        send_addr : address = self.bidders[i].bidder
+        diff : wei_value = self.bidders[i].Payed - self.bidders[i].Payment
+        send(send_addr, diff)
+    
+    # For each notary send constantPay * notatary.timesUsed 
+    for i in range(100):
+        if i > self.notaries_size:
+            break
+        send_addr : address = self.notaries[i].notary
+        val : wei_value = constantPay * self.notaries[i].timesused
+        send(send_addr, val)
 
 
          
