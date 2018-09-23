@@ -1,7 +1,7 @@
 #events 
 Payment: event({amount: uint256(wei), arg2: indexed(address)})
-NotaryRegister : event({_from:indexed(address)})
-BidderRegister : event({_from:indexed(address)})
+NotaryRegister : event({_from:address})
+BidderRegister : event({_from:address})
 #address of auctioner
 auctioner: public(address)
 #auction timestamps
@@ -64,7 +64,6 @@ def __default__():
 @public
 def notaryRegister():
     assert not self.notaries[msg.sender].isValid and not msg.sender == self.auctioner
-    self.M = self.M+1
     self.notary_map[self.notaries_size] = msg.sender
     self.notaries[msg.sender].isValid = True
     self.notaries_size = self.notaries_size + 1
