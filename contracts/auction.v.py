@@ -2,35 +2,42 @@
 Payment: event({amount: uint256(wei), arg2: indexed(address)})
 NotaryRegister : event({_from:address})
 BidderRegister : event({_from:address})
+
 #address of auctioner
-auctioner: public(address)
-#auction timestamps
-auction_start: public(timestamp)
-auction_end: public(timestamp)
+auctioner: address
+
 #large prime
 q: public(uint256)
+
 #number of items
 M: public(uint256)
-#number of notaries registered
-notaries_size: public(int128)
-#number of bidders registered
-bidders_size : public(int128)
-#Allocating this notary to bidder
-notary_num: public(int128)
 
+#number of notaries registered
+notaries_size: int128
+
+#number of bidders registered
+bidders_size: int128
+
+#Allocating this notary to bidder
+notary_num: int128
+
+# Pay for each time notary is used
 constantPay: wei_value 
 
-bidders: public({
+# Bidders struct Array
+bidders: {
         bidder: address,
         notary: address,
         notaryIndex: int128,
         Payment : wei_value,
         Payed : wei_value
-    }[int128])
+    }[int128]
 
-bidder_map : bool[address]
+# bidder map 
+bidder_map: bool[address]
 
-notaries : public({
+# Notaries struct Array
+notaries : {
         timesused: uint256,
         notary: address,
         bidder: address,
@@ -38,14 +45,15 @@ notaries : public({
         num_items : uint256,
         bid_input : uint256[100][2],
         bid_value : uint256[2]
-    }[int128])
+    }[int128]
 
-notary_map : bool[address]
+# notary map 
+notary_map: bool[address]
 
-winners : int128[100]
+winners: int128[100]
 
 @public
-def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
+def __init__(_q: uint256, _M: uint256):
     assert _M > 0 and _q > 0
 
     self.auctioner = msg.sender
@@ -56,10 +64,8 @@ def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
     self.bidders_size = 0
     self.notary_num = 0
     self.constantPay = 10
-    self.auction_start = block.timestamp
-    self.auction_end = self.auction_start + _bidding_time
-
-@private
+    
+@public
 def sqrt(x: uint256, xx: uint256) -> decimal :
     _val : decimal = convert(xx, 'decimal')
     z : decimal  = (_val + 1.0) / 2.0
@@ -133,8 +139,6 @@ def compareIndex(j : int128, k : int128) -> bool:
     return False
 
 
-
-
 @public    
 def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
     Au : uint256 = self.notaries[j].bid_input[k][0]
@@ -149,10 +153,11 @@ def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
         return True
     return False
 
+
 @public
 def winnerDetermine():
     assert self.auctioner == msg.sender
-    #step 1
+    # Step 1 Sort the array of bidders
 
     for i in range(1,100):
         if i >= self.bidders_size:
@@ -169,7 +174,7 @@ def winnerDetermine():
                 break 
         self.notaries[j+1] = self.notaries[key]                           
             
-    #step 2
+    # Step 2 Find the winners  
     self.winners[0] = 0
     winner_num : int128 = 1
     
@@ -201,7 +206,7 @@ def winnerDetermine():
             self.winners[winner_num] = i
             winner_num = winner_num + 1
 
-
+    # Step 3 Calculate Payments for each Bidder
     for i in range(100):
         didwefindaj : bool = False
         ourJ : int128 = 0
@@ -248,21 +253,20 @@ def winnerDetermine():
             self.bidders[xi].Payment = 0
 
 
-    # for each bidder send Payed - Payment
+    # Send Money to each Bidder (Money Payed - Payment)
     for i in range(100):
         if i > self.bidders_size:
             break
         send_addr : address = self.bidders[i].bidder
         diff : wei_value = self.bidders[i].Payed - self.bidders[i].Payment
-        send(send_addr, diff)
+        if diff > 0:
+            send(send_addr, diff)
     
-    # For each notary send constantPay * notatary.timesUsed 
+    # Send Money to each Notary (constantPay * timesused)
     for i in range(100):
         if i > self.notaries_size:
             break
         send_addr : address = self.notaries[i].notary
         val : wei_value = self.constantPay * self.notaries[i].timesused
-        send(send_addr, val)
-
-
-         
+        if val > 0:
+            send(send_addr, val)
