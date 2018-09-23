@@ -18,6 +18,8 @@ bidders_size : public(int128)
 #Allocating this notary to bidder
 notary_num: public(int128)
 
+constantPay: wei_value 
+
 bidders: public({
         bidder: address,
         notary: address,
@@ -30,6 +32,7 @@ bidders: public({
 
 
 notaries : public({
+        timesused: uint256,
         notary: address,
         bidder: address,
         bidderIndex: int128,
@@ -52,7 +55,7 @@ def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
     self.notaries_size = 0
     self.bidders_size = 0
     self.notary_num = 0
-    
+    self.constantPay = 10
     self.auction_start = block.timestamp
     self.auction_end = self.auction_start + _bidding_time
 
@@ -245,3 +248,5 @@ def winnerDetermine():
 
 
         # for each bidder send Payed - Payment
+        # For each notary send constantPay * notatary.timesUsed 
+         
