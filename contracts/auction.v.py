@@ -1,7 +1,7 @@
 #events 
 Payment: event({amount: uint256(wei), arg2: indexed(address)})
-NotaryRegister : event({_from:address})
-BidderRegister : event({_from:address})
+
+
 #address of auctioner
 auctioner: public(address)
 #auction timestamps
@@ -28,6 +28,7 @@ bidder_map : address[int128]
 
 notaries : public({
         bidder:address,
+        isAssigned : bool,
         bid_input : uint256[100][2],
         bid_value : uint256[2],
         isValid : bool
@@ -56,18 +57,17 @@ def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
 @public
 @payable
 def __default__():
-    send(msg.sender, msg.value)
     log.Payment(msg.value, msg.sender)
 
 
 #First notaries register and their public address stored in map
 @public
 def notaryRegister():
-    assert not self.notaries[msg.sender].isValid and not msg.sender == self.auctioner
+    assert not self.notaries[msg.sender].isValid
+
     self.notary_map[self.notaries_size] = msg.sender
     self.notaries[msg.sender].isValid = True
-    self.notaries_size = self.notaries_size + 1
-    log.NotaryRegister(msg.sender)  
+    self.notaries_size = self.notaries_size + 1  
 
 
 #Next bidders register and assigned a notary based on notary_num value (Not random)
@@ -75,14 +75,15 @@ def notaryRegister():
 @payable
 def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items:uint256):
     assert self.notary_num < self.notaries_size
-    assert not self.auctioner == msg.sender
     assert not self.bidders[msg.sender].isValid and not self.notaries[msg.sender].isValid
+    assert not self.notaries[self.notary_map[self.notary_num]].isAssigned
     assert _num_items > 0 and _num_items <= self.M
 
     self.bidder_map[self.bidders_size] = msg.sender
     self.bidders_size = self.bidders_size + 1
 
     #Assign notary
+    self.notaries[self.notary_map[self.notary_num]].isAssigned = True
     self.notaries[self.notary_map[self.notary_num]].bidder = msg.sender
     self.bidders[msg.sender].notary = self.notary_map[self.notary_num]
     self.bidders[msg.sender].isValid = True
@@ -92,8 +93,6 @@ def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items
     self.bidders[msg.sender].num_items = _num_items
     self.notaries[self.bidders[msg.sender].notary].bid_input = _bid_input
     self.notaries[self.bidders[msg.sender].notary].bid_value = _bid_value
-    
-    log.BidderRegister(msg.sender)  
 
 
 @public
@@ -102,6 +101,9 @@ def compareIndex(j : int128, k : int128) -> bool:
     Av : decimal = convert( self.notaries[self.bidder_map[j]].bid_value[1], 'decimal' )
     Bu : decimal = convert( self.notaries[self.bidder_map[k]].bid_value[0], 'decimal' )
     Bv : decimal = convert( self.notaries[self.bidder_map[k]].bid_value[1], 'decimal' )
+
+    N1 : decimal = convert( self.bidders[self.bidder_map[j]].num_items, 'decimal')
+    N2 : decimal = convert( self.bidders[self.bidder_map[k]].num_items, 'decimal')
 
     Q : decimal = convert( self.q, 'decimal')
 
@@ -127,6 +129,11 @@ def compare(j : int128, i : int128,k : int128, l : int128) ->bool:
     Bu : decimal = convert( self.notaries[self.bidder_map[i]].bid_input[l][0], 'decimal' )
     Bv : decimal = convert( self.notaries[self.bidder_map[i]].bid_input[l][1], 'decimal' )
 
+    N1 : decimal = convert( self.bidders[self.bidder_map[j]].num_items, 'decimal')
+    N2 : decimal = convert( self.bidders[self.bidder_map[i]].num_items, 'decimal')
+
+    Q : decimal = convert( self.q, 'decimal')
+
     val1 : decimal = (Au - Bu)
     val2 : decimal = (Av - Bv)
     
@@ -137,7 +144,6 @@ def compare(j : int128, i : int128,k : int128, l : int128) ->bool:
 @public
 def winnerDetermine():
     assert self.auctioner == msg.sender
-    #step 1
     for i in range(100):
         if i >= self.bidders_size:
             return
@@ -169,4 +175,3 @@ def winnerDetermine():
                         index = index + 1
 
     #step3                     
-
