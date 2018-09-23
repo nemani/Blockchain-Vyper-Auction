@@ -1,5 +1,5 @@
 #events 
-Payment: event({amount: wei_value, _from: address})
+Payment: event({amount: uint256(wei), arg2: indexed(address)})
 NotaryRegister : event({_from:address})
 BidderRegister : event({_from:address})
 #address of auctioner
@@ -24,7 +24,6 @@ bidders: public({
         bidder: address,
         notary: address,
         notaryIndex: int128,
-        num_items : uint256,
         Payment : wei_value,
         Payed : wei_value
     }[int128])
@@ -36,8 +35,9 @@ notaries : public({
         notary: address,
         bidder: address,
         bidderIndex: int128,
+        num_items : uint256,
         bid_input : uint256[100][2],
-        bid_value : uint256[2],
+        bid_value : uint256[2]
     }[int128])
 
 notary_map : bool[address]
@@ -101,7 +101,7 @@ def bidderRegister(_bid_input:uint256[100][2], _bid_value:uint256[2], _num_items
     self.bidder_map[msg.sender]=True
 
     #send items and value to notary
-    self.bidders[self.notary_num].num_items = _num_items
+    self.notaries[self.notary_num].num_items = _num_items
     self.notaries[self.notary_num].bidderIndex = self.notary_num
     self.notaries[self.notary_num].bid_input = _bid_input
     self.notaries[self.notary_num].bid_value = _bid_value
@@ -132,12 +132,7 @@ def compareIndex(j : int128, k : int128) -> bool:
 
     return False
 
-@public
-def swapBidders(j : int128, k : int128) -> bool:
-    temp : uint256[2]  = self.notaries[j].bid_value
-    self.notaries[j].bid_value = self.notaries[j + 1].bid_value
-    self.notaries[j + 1].bid_value = temp
-    return True
+
 
 
 @public    
@@ -158,16 +153,22 @@ def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
 def winnerDetermine():
     assert self.auctioner == msg.sender
     #step 1
-    for i in range(100):
-        if i >= self.bidders_size:
-            return
-        for j in range(100):
-            if j >= self.bidders_size - i - 1:
-                break
 
-            if self.compareIndex(j, j + 1):
-                self.swapBidders(j, j + 1)
-    
+    for i in range(1,100):
+        if i >= self.bidders_size:
+            break
+        j : int128 = i-1
+        key : int128 = i
+        for k in range(100):
+            if j >= 0 and  self.compareIndex(j,key):
+                self.notaries[j+1] = self.notaries[j]
+                j = j-1
+                self.notaries[j].timesused += 1
+                self.notaries[j+1].timesused += 1 
+            else:
+                break 
+        self.notaries[j+1] = self.notaries[key]                           
+            
     #step 2
     self.winners[0] = 0
     winner_num : int128 = 1
@@ -184,11 +185,11 @@ def winnerDetermine():
                 break
 
             for k in range(100):
-                if flag or k >= convert(self.bidders[self.winners[j]].num_items,'int128'):
+                if flag or k >= convert(self.notaries[self.winners[j]].num_items,'int128'):
                     break
 
                 for l in range(100):
-                    if l >= convert(self.bidders[i].num_items,'int128'):
+                    if l >= convert(self.notaries[i].num_items,'int128'):
                         break
 
                     #  Compare bidder[winners[j]][k] and bidders[i][l]
@@ -220,11 +221,11 @@ def winnerDetermine():
                     continue
 
                 for a in range(100):
-                    if not isthisthej or a >= convert(self.bidders[j].num_items,'int128'):
+                    if not isthisthej or a >= convert(self.notaries[j].num_items,'int128'):
                         break
 
                     for b in range(100):
-                        if b >= convert(self.bidders[k].num_items,'int128'):
+                        if b >= convert(self.notaries[k].num_items,'int128'):
                             break
 
                         #  Compare bidder[winners[j]][k] and bidders[i][l]
@@ -242,11 +243,15 @@ def winnerDetermine():
             U : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[0]
             V : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[1]
             wj : uint256 = (U + V) % self.q
-            self.bidders[xi].Payment = as_wei_value(self.sqrt(wj, self.bidders[xi].num_items), 'wei')
+            self.bidders[xi].Payment = as_wei_value(self.sqrt(wj, self.notaries[xi].num_items), 'wei')
         else:
             self.bidders[xi].Payment = 0
 
 
         # for each bidder send Payed - Payment
+     
         # For each notary send constantPay * notatary.timesUsed 
+      
+
+
          

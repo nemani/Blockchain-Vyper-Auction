@@ -80,15 +80,56 @@ contract('auction', accounts => {
 				}
 			});
 		});
+		describe('Fail case', () => {
+			it('bidder should deposit min value of w*sqrt(num_items) wei', async () => {
+				try {
+			 	await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'wei')});
+				} catch (err) {
+				assert.isUndefined(err.message,'revert with valid deposit value');
+				}
+			});
+		});
 		describe('success case', () => {
 			it('bidder successfully registers with this address', async () => {
 				try {
-				await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5]});
+			 	await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'ether')});
+				await instance.bidderRegister([[7,1],[12,9],[11,11]],[4,6],3,{ from: accounts[6],value:web3.toWei(1,'ether')});
+				await instance.bidderRegister([[13,10],[12,8]],[3,4],2,{ from: accounts[7],value:web3.toWei(1,'ether')});
 				} catch (err) {
 				assert.isUndefined(err.message,'revert from valid address');
 				}
 			});
 		});
+	});
+	describe('Winner Determination', () => {
+		let instance;	
+		beforeEach(async () => {
+			instance = await Auction.new(19,10,1000, { from: owner });
+			await instance.notaryRegister({ from: accounts[1] });
+			await instance.notaryRegister({ from: accounts[2] });
+			await instance.notaryRegister({ from: accounts[3] });
+			await instance.notaryRegister({ from: accounts[4] });
+			await instance.bidderRegister([[12,8],[12,9]],[5,6],2,{ from: accounts[5],value:web3.toWei(1,'ether')});
+			await instance.bidderRegister([[7,1],[12,9],[11,11]],[4,6],3,{ from: accounts[6],value:web3.toWei(1,'ether')});
+			await instance.bidderRegister([[13,10],[12,8]],[3,4],2,{ from: accounts[7],value:web3.toWei(1,'ether')});
+
+		});
+		describe('success case', () => {
+			it('check sorted list', async () => {
+				try {
+			 	await instance.winnerDetermine({ from: owner});
+				//var sorted = [[5,6],[4,6],[3,4]];
+				//var sorted2 = [] ;
+				//var val = await instance.notaries__bid_value.call(0,0);
+				//console.log(val.toNumber());
+				//assert.deepEqual(sorted2,sorted,'not sorted');
+				} catch (err) {
+				assert.isUndefined(err.message,'revert from valid address');
+				}
+			});
+		});
+
+
 	});
 
 });
