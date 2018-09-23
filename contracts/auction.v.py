@@ -52,14 +52,6 @@ def __init__(_q: uint256, _M: uint256, _bidding_time: timedelta):
     self.auction_start = block.timestamp
     self.auction_end = self.auction_start + _bidding_time
 
-# Fallback Payment Function (We use this to topup the wei in the contract)
-@public
-@payable
-def __default__():
-    send(msg.sender, msg.value)
-    log.Payment(msg.value, msg.sender)
-
-
 #First notaries register and their public address stored in map
 @public
 def notaryRegister():
