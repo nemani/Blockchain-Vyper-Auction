@@ -117,7 +117,8 @@ contract("auction", accounts => {
 		describe("Success Case", () => {
 			it("Bidder can register with new address", async () => {
 				let result = await instance.bidderRegister(
-					[[12, 8], [12, 9]],
+					[12, 12],
+					[8, 9],
 					[5, 6],
 					2,
 					{
@@ -137,15 +138,10 @@ contract("auction", accounts => {
 		describe("Fail case", () => {
 			it("bidder should deposit min value of w*sqrt(num_items) wei", async () => {
 				try {
-					await instance.bidderRegister(
-						[[12, 8], [12, 9]],
-						[5, 6],
-						2,
-						{
-							from: accounts[5],
-							value: web3.toWei(1, "wei")
-						}
-					);
+					await instance.bidderRegister([12, 12], [8, 9], [5, 6], 2, {
+						from: accounts[5],
+						value: web3.toWei(1, "wei")
+					});
 					assert.fail(
 						"should have thrown an error in the above line"
 					);
@@ -161,15 +157,10 @@ contract("auction", accounts => {
 		describe("Fail case", () => {
 			it("bidder should not be Registered as notary", async () => {
 				try {
-					await instance.bidderRegister(
-						[[12, 8], [12, 9]],
-						[5, 6],
-						2,
-						{
-							from: accounts[1],
-							value: web3.toWei(16, "wei")
-						}
-					);
+					await instance.bidderRegister([12, 12], [8, 9], [5, 6], 2, {
+						from: accounts[1],
+						value: web3.toWei(16, "wei")
+					});
 					assert.fail(
 						"should have thrown an error in the above line"
 					);
@@ -183,17 +174,18 @@ contract("auction", accounts => {
 		});
 		describe("success case", () => {
 			it("multiple bidders can successfully register", async () => {
-				await instance.bidderRegister([[12, 8], [12, 9]], [5, 6], 2, {
+				await instance.bidderRegister([12, 12], [8, 9], [5, 6], 2, {
 					from: accounts[5],
 					value: web3.toWei(16, "wei")
 				});
 				await instance.bidderRegister(
-					[[7, 1], [12, 9], [11, 11]],
+					[7, 12, 11],
+					[1, 9, 11],
 					[4, 6],
 					3,
 					{ from: accounts[6], value: web3.toWei(18, "wei") }
 				);
-				await instance.bidderRegister([[13, 10], [12, 8]], [3, 4], 2, {
+				await instance.bidderRegister([13, 12], [10, 8], [3, 4], 2, {
 					from: accounts[7],
 					value: web3.toWei(16, "wei")
 				});
@@ -213,25 +205,24 @@ contract("auction", accounts => {
 			await instance.notaryRegister({ from: accounts[2] });
 			await instance.notaryRegister({ from: accounts[3] });
 			await instance.notaryRegister({ from: accounts[4] });
-
-			await instance.bidderRegister([[12, 8], [12, 9]], [5, 6], 2, {
+			// 1, 2 || 11
+			await instance.bidderRegister([12, 12], [8, 9], [5, 6], 2, {
 				from: accounts[5],
-				value: web3.toWei(1, "ether")
+				value: web3.toWei(16, "wei")
 			});
+			// 8, 4, 3 || 10
+			await instance.bidderRegister([7, 13, 11], [1, 10, 11], [4, 6], 3, {
+				from: accounts[6],
+				value: web3.toWei(18, "wei")
+			});
+			// 4, 1 || 7
 
-			await instance.bidderRegister(
-				[[7, 1], [12, 9], [11, 11]],
-				[4, 6],
-				3,
-				{ from: accounts[6], value: web3.toWei(1, "ether") }
-			);
-
-			await instance.bidderRegister([[13, 10], [12, 8]], [3, 4], 2, {
+			await instance.bidderRegister([13, 12], [10, 8], [3, 4], 2, {
 				from: accounts[7],
-				value: web3.toWei(1, "ether")
+				value: web3.toWei(16, "wei")
 			});
-
-			await instance.bidderRegister([[13, 10], [12, 8]], [8, 1], 2, {
+			// 4, 1 || 9
+			await instance.bidderRegister([13, 12], [10, 8], [8, 1], 2, {
 				from: accounts[8],
 				value: web3.toWei(1, "ether")
 			});
@@ -240,7 +231,7 @@ contract("auction", accounts => {
 			it("check sorted list", async () => {
 				result = await instance.winnerDetermine({ from: owner });
 				console.log(result);
-				// assert.fail();
+				assert.fail();
 			});
 		});
 	});
