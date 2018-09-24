@@ -4,9 +4,6 @@ AuctionStarted : event({q: uint256, m: uint256})
 NotaryRegister : event({_from:address})
 BidderRegister : event({_from:address})
 
-myevent : event({x: uint256, y: uint256})
-myevent2 : event({xi: int128, x: int128, did: bool})
-
 #address of auctioner
 auctioner: address
 
