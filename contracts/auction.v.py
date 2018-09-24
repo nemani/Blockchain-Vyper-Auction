@@ -149,38 +149,33 @@ def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
 
 @public
 def sortNotaries():
-    sortList: int128[100]
-
-    for index in range(100):
-        if index >= self.bidders_size:
-            break
-        sortList[index] = index
-
+    temp: {
+        timesused: uint256,
+        notary: address,
+        bidder: address,
+        bidderIndex: int128,
+        num_items : uint256,
+        bid_input : uint256[100][2],
+        bid_value : uint256[2],
+        w: int128
+    }
     for index in range(1,100):
 
         if index >= self.bidders_size:
             break
         
-        currentvalue : int128 = sortList[index]
+        currentvalue : int128 = index
         position : int128 = index
-        
+        temp = self.notaries[currentvalue]
         for lol in range(100):
             if position > 0:
-                if self.notaries[sortList[position - 1]].w <= self.notaries[currentvalue].w:
-                    sortList[position] = sortList[position - 1]
+                if self.notaries[position - 1].w <= self.notaries[currentvalue].w:
+                    self.notaries[position] = self.notaries[position - 1]
                     position = position - 1
-                # else:
-                #     break
-            # elif position == 0:
-
             else:
                 break
-        sortList[position] = currentvalue
+        self.notaries[position] = temp
 
-    log.myevent2(self.notaries[sortList[0]].w)
-    log.myevent2(self.notaries[sortList[1]].w)
-    log.myevent2(self.notaries[sortList[2]].w)
-    log.myevent2(self.notaries[sortList[3]].w)
 
 @public
 def winnerDetermine():
@@ -191,6 +186,7 @@ def winnerDetermine():
     # # Step 2 Find the winners  
     # self.winners[0] = 0
     # winner_num : int128 = 1
+
     
     # for i in range(100):
     #     flag : bool = False
@@ -210,7 +206,6 @@ def winnerDetermine():
     #             for l in range(100):
     #                 if l >= convert(self.notaries[i].num_items,'int128'):
     #                     break
-
     #              #  Compare bidder[winners[j]][k] and bidders[i][l]
     #                 if self.checkEqual(i, self.winners[j], l, k):
     #                     flag = True
