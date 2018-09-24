@@ -240,9 +240,7 @@ contract("auction", accounts => {
 			it("check sorted list", async () => {
 				result = await instance.winnerDetermine({ from: owner });
 				console.log(result);
-				assert.fail();
-				// var val = await instance.notaries__bid_value.call(0, 0);
-				// console.log(val.toNumber());
+				// assert.fail();
 			});
 		});
 	});

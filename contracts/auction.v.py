@@ -147,7 +147,31 @@ def checkEqual(j : int128, i : int128,k : int128, l : int128) -> bool:
         return True
     return False
 
-@public
+
+@public    
+def checkGreater(j : int128, i : int128) -> bool:
+    # Q : int128 = convert(self.q, 'int128')
+    # Au : int128 = convert(self.notaries[j].bid_value[0], 'int128')
+    # Av : int128 = convert(self.notaries[j].bid_value[1], 'int128')
+
+    # Bu : int128 = convert(self.notaries[i].bid_value[0], 'int128')
+    # Bv : int128 = convert(self.notaries[i].bid_value[1], 'int128')
+
+    # val1 : int128 = (Au - Bu) % Q
+    # val2 : int128 = (Av - Bv) % Q
+
+    # if (val1 + val2) < (Q/2):
+    #     return False
+    # else:
+    #     return True
+
+    if self.notaries[j].w <= self.notaries[i].w:
+        return False
+    else:
+        return True
+
+
+@private
 def sortNotaries():
     temp: {
         timesused: uint256,
@@ -169,52 +193,55 @@ def sortNotaries():
         temp = self.notaries[currentvalue]
         for lol in range(100):
             if position > 0:
-                if self.notaries[position - 1].w <= self.notaries[currentvalue].w:
+                if not self.checkGreater(position - 1, currentvalue):
                     self.notaries[position] = self.notaries[position - 1]
                     position = position - 1
             else:
                 break
         self.notaries[position] = temp
 
+@private
+def getWinners() -> int128:
+    self.winners[0] = 0
+    winner_num : int128 = 1
+
+    for i in range(100):
+        flag : bool = False
+        
+        if i >= self.bidders_size:
+            break
+        
+        for j in range(100):
+            if flag or j >= winner_num:
+                break
+
+            for k in range(100):
+                if flag or k >= convert(self.notaries[self.winners[j]].num_items,'int128'):
+                    break
+                for l in range(100):
+                    if l >= convert(self.notaries[i].num_items,'int128'):
+                        break
+                    # Compare bidder[winners[j]][k] and bidders[i][l]
+                    if self.checkEqual(i, self.winners[j], l, k):
+                        flag = True
+                        break
+        
+        if flag:
+            self.winners[winner_num] = i
+            winner_num = winner_num + 1
+
+    return winner_num
 
 @public
 def winnerDetermine():
     assert msg.sender == self.auctioner, "Only Auctioner can call this function" 
-    # Step 1 Sort the array of bidders
+    # Step 1 Sort the array of Notaries
     self.sortNotaries()
 
     # # Step 2 Find the winners  
-    # self.winners[0] = 0
-    # winner_num : int128 = 1
+    winners_num: int128 = self.getWinners()
 
-    
-    # for i in range(100):
-    #     flag : bool = False
-        
-    #     if i >= self.bidders_size:
-    #         break
-
-    #     for j in range(100):
-
-    #         if flag or j >= winner_num:
-    #             break
-
-    #         for k in range(100):
-    #             if flag or k >= convert(self.notaries[self.winners[j]].num_items,'int128'):
-    #                 break
-
-    #             for l in range(100):
-    #                 if l >= convert(self.notaries[i].num_items,'int128'):
-    #                     break
-    #              #  Compare bidder[winners[j]][k] and bidders[i][l]
-    #                 if self.checkEqual(i, self.winners[j], l, k):
-    #                     flag = True
-    #                     break
-        
-    #     if flag:
-    #         self.winners[winner_num] = i
-    #         winner_num = winner_num + 1
-
+    log.myevent2(winners_num)
     # # Step 3 Calculate Payments for each Bidder
     # for i in range(100):
     #     didwefindaj : bool = False
