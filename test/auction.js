@@ -215,14 +215,14 @@ contract("auction", accounts => {
 				from: accounts[6],
 				value: web3.toWei(18, "wei")
 			});
-			// 4, 1 || 7
 
+			// 4, 1 || 7
 			await instance.bidderRegister([13, 12], [10, 8], [3, 4], 2, {
 				from: accounts[7],
 				value: web3.toWei(16, "wei")
 			});
-			// 4, 1 || 9
-			await instance.bidderRegister([13, 12], [10, 8], [8, 1], 2, {
+			// 4, 5 || 9
+			await instance.bidderRegister([13, 13], [10, 11], [8, 1], 2, {
 				from: accounts[8],
 				value: web3.toWei(1, "ether")
 			});

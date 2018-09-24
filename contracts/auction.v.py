@@ -5,7 +5,8 @@ NotaryRegister : event({_from:address})
 BidderRegister : event({_from:address})
 
 myevent : event({x: uint256, y: uint256})
-myevent2 : event({x: int128})
+myevent2 : event({xi: int128, x: int128, did: bool})
+
 #address of auctioner
 auctioner: address
 
@@ -258,25 +259,27 @@ def calculatePayments(winner_num: int128):
         if i >= winner_num:
             break
 
-        didwefindaj : bool = False
-        ourJ : int128 = 0
+        didwefindaj: bool = False
+        ourJ: int128 = 0
 
         for j in range(self.winners[i], self.winners[i] + 100):
-            ijnointersect : bool = True
-            isthisthej : bool = True
             if j >= self.bidders_size:
                 break
+            
+            ijintersect : bool = False
+            isthisthej : bool = True
+            
 
-            for k in range(0, 100):
+            for k in range(100):
                 if not isthisthej or k >= j:
                     break
 
                 if k == i:
-                    if not ijnointersect:
+                    if ijintersect:
                         continue
 
                     for a in range(100):
-                        if not isthisthej or a >= convert(self.notaries[j].num_items,'int128'):
+                        if ijintersect or a >= convert(self.notaries[j].num_items,'int128'):
                             break
 
                         for b in range(100):
@@ -284,9 +287,10 @@ def calculatePayments(winner_num: int128):
                                 break
 
                             #  Compare bidder[winners[j]][k] and bidders[i][l]
-                            if (self.checkEqual(j, i, a, b)):
-                                ijnointersect = False
+                            if (self.checkEqual(j, k, a, b)):
+                                ijintersect = True
                                 break
+
                 else:
                     for a in range(100):
                         if not isthisthej or a >= convert(self.notaries[j].num_items,'int128'):
@@ -301,21 +305,19 @@ def calculatePayments(winner_num: int128):
                                 isthisthej = False
                                 break
                 
-            if isthisthej and ijnointersect:
+            if isthisthej and ijintersect:
                 didwefindaj = True
                 ourJ = j
                 break
 
         xi : int128 = self.winners[i]
+
         if didwefindaj:
-            U : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[0]
-            V : uint256 = self.notaries[self.bidders[ourJ].notaryIndex].bid_value[1]
-            wj : uint256 = (U + V) % self.q
+            wj : uint256 = convert(self.notaries[ourJ].w, 'uint256')
             self.bidders[xi].Payment = as_wei_value(self.sqrt(wj, self.notaries[xi].num_items), 'wei')
         else:
             self.bidders[xi].Payment = 0
-
-
+        
 
 @public
 def winnerDetermine():
@@ -327,23 +329,22 @@ def winnerDetermine():
     winner_num: int128 = self.getWinners()
     
     # Step 3 Calculate Payments for each Bidder
-    
     self.calculatePayments(winner_num)
 
-    # # Send Money to each Bidder (Money Payed - Payment)
-    # for i in range(100):
-    #     if i > self.bidders_size:
-    #         break
-    #     send_addr : address = self.bidders[i].bidder
-    #     diff : wei_value = self.bidders[i].Payed - self.bidders[i].Payment
-    #     if diff > 0:
-    #         send(send_addr, diff)
+    # Send Money to each Bidder (Money Payed - Payment)
+    for i in range(100):
+        if i > self.bidders_size:
+            break
+        send_addr : address = self.bidders[i].bidder
+        diff : wei_value = self.bidders[i].Payed - self.bidders[i].Payment
+        if diff > 0:
+            send(send_addr, diff)
     
-    # # Send Money to each Notary (constantPay * timesused)
-    # for i in range(100):
-    #     if i > self.notaries_size:
-    #         break
-    #     send_addr : address = self.notaries[i].notary
-    #     val : wei_value = self.constantPay * self.notaries[i].timesused
-    #     if val > 0:
-    #         send(send_addr, val)
+    # Send Money to each Notary (constantPay * timesused)
+    for i in range(100):
+        if i > self.notaries_size:
+            break
+        send_addr : address = self.notaries[i].notary
+        val : wei_value = self.constantPay * self.notaries[i].timesused
+        if val > 0:
+            send(send_addr, val)
