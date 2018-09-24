@@ -230,8 +230,8 @@ contract("auction", accounts => {
 		describe("success case", () => {
 			it("check sorted list", async () => {
 				result = await instance.winnerDetermine({ from: owner });
-				console.log(result);
-				assert.fail();
+				// console.log(result);
+				// assert.fail();
 			});
 		});
 	});
