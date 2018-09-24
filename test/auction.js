@@ -216,25 +216,31 @@ contract("auction", accounts => {
 
 			await instance.bidderRegister([[12, 8], [12, 9]], [5, 6], 2, {
 				from: accounts[5],
-				value: web3.toWei(16, "wei")
+				value: web3.toWei(1, "ether")
 			});
 
 			await instance.bidderRegister(
 				[[7, 1], [12, 9], [11, 11]],
 				[4, 6],
 				3,
-				{ from: accounts[6], value: web3.toWei(20, "wei") }
+				{ from: accounts[6], value: web3.toWei(1, "ether") }
 			);
 
 			await instance.bidderRegister([[13, 10], [12, 8]], [3, 4], 2, {
 				from: accounts[7],
-				value: web3.toWei(15, "wei")
+				value: web3.toWei(1, "ether")
+			});
+
+			await instance.bidderRegister([[13, 10], [12, 8]], [8, 1], 2, {
+				from: accounts[8],
+				value: web3.toWei(1, "ether")
 			});
 		});
 		describe("success case", () => {
 			it("check sorted list", async () => {
 				result = await instance.winnerDetermine({ from: owner });
 				console.log(result);
+				assert.fail();
 				// var val = await instance.notaries__bid_value.call(0, 0);
 				// console.log(val.toNumber());
 			});
